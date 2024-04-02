@@ -1,7 +1,8 @@
-use crate::{Client, DynarustError, Resource, PK, SK};
-use aws_sdk_dynamodb::model::{
+use aws_sdk_dynamodb::types::{
     AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
 };
+
+use crate::{Client, DynarustError, Resource, PK, SK};
 
 #[derive(Debug, Clone)]
 pub struct CreateTableOptions {
@@ -56,27 +57,27 @@ impl Client {
         let pk = AttributeDefinition::builder()
             .attribute_name(PK)
             .attribute_type(ScalarAttributeType::S)
-            .build();
+            .build()?;
 
         let sk = AttributeDefinition::builder()
             .attribute_name(SK)
             .attribute_type(ScalarAttributeType::S)
-            .build();
+            .build()?;
 
         let ks_pk = KeySchemaElement::builder()
             .attribute_name(PK)
             .key_type(KeyType::Hash)
-            .build();
+            .build()?;
 
         let ks_sk = KeySchemaElement::builder()
             .attribute_name(SK)
             .key_type(KeyType::Range)
-            .build();
+            .build()?;
 
         let pt = ProvisionedThroughput::builder()
             .read_capacity_units(options.read_capacity)
             .write_capacity_units(options.write_capacity)
-            .build();
+            .build()?;
 
         let result = self
             .client

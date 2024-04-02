@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 mod client;
 mod condition_check;
 mod create;

@@ -1,4 +1,5 @@
-use aws_sdk_dynamodb::model::{delete, AttributeValue, TransactWriteItem};
+use aws_sdk_dynamodb::types::builders::DeleteBuilder;
+use aws_sdk_dynamodb::types::{AttributeValue, TransactWriteItem};
 
 use crate::client::{PK, SK};
 use crate::condition_check::ConditionCheckInfo;
@@ -28,16 +29,21 @@ pub fn transact_delete_with_checks<T: Resource>(
     condition_checks: Vec<ConditionCheckInfo>,
     transaction_context: &mut Vec<TransactWriteItem>,
 ) {
-    let mut delete = delete::Builder::default()
-        .table_name(T::table())
-        .key(PK, AttributeValue::S(pk))
+    let mut delete = DeleteBuilder::default()
+    .key(PK, AttributeValue::S(pk))
+    .table_name(T::table())
         .key(SK, AttributeValue::S(sk));
 
     delete = ConditionCheckInfo::default()
         .merge(condition_checks)
         .dump_in_delete(delete);
 
-    transaction_context.push(TransactWriteItem::builder().delete(delete.build()).build());
+    // TODO(meos): delete.build() 에러 처리
+    transaction_context.push(
+        TransactWriteItem::builder()
+            .delete(delete.build().unwrap())
+            .build(),
+    );
 }
 
 impl Client {

@@ -1,10 +1,14 @@
 use std::fmt::Debug;
 
-use aws_sdk_dynamodb::error::{
-    BatchGetItemError, CreateTableError, DeleteItemError, GetItemError, PutItemError, QueryError,
-    TransactWriteItemsError, UpdateItemError,
+use aws_sdk_dynamodb::{
+    error::{BuildError, SdkError},
+    operation::{
+        batch_get_item::BatchGetItemError, create_table::CreateTableError,
+        delete_item::DeleteItemError, get_item::GetItemError, put_item::PutItemError,
+        query::QueryError, transact_write_items::TransactWriteItemsError,
+        update_item::UpdateItemError,
+    },
 };
-use aws_sdk_dynamodb::types::SdkError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -30,6 +34,9 @@ pub enum DynarustError {
     #[error("Error while deserializing resource: {0}")]
     ResourceDeserializeError(#[from] serde_json::Error),
 
+    #[error("Erorr while building something: {0}")]
+    BuildError(#[from] BuildError),
+
     #[error("{0}")]
     DynamoError(String),
 }
@@ -44,6 +51,7 @@ macro_rules! impl_dynamo_error {
                 let service_error = value.into_service_error();
                 DynarustError::DynamoError(
                     service_error
+                        .meta()
                         .message()
                         .unwrap_or("unknown error")
                         .to_string(),
@@ -68,6 +76,7 @@ impl From<SdkError<CreateTableError>> for DynarustError {
         };
         let service_error = value.into_service_error();
         let message = service_error
+            .meta()
             .message()
             .unwrap_or("unknown error")
             .to_string();

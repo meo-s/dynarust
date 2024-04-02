@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
-use aws_sdk_dynamodb::client::fluent_builders::{DeleteItem, PutItem, UpdateItem};
-use aws_sdk_dynamodb::model::{
-    condition_check, delete, put, update, AttributeValue, TransactWriteItem,
+use aws_sdk_dynamodb::operation::delete_item::builders::DeleteItemFluentBuilder;
+use aws_sdk_dynamodb::operation::put_item::builders::PutItemFluentBuilder;
+use aws_sdk_dynamodb::operation::update_item::builders::UpdateItemFluentBuilder;
+use aws_sdk_dynamodb::types::builders::{
+    ConditionCheckBuilder, DeleteBuilder, PutBuilder, UpdateBuilder,
 };
+use aws_sdk_dynamodb::types::{AttributeValue, ConditionCheck, TransactWriteItem};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 
@@ -59,8 +62,8 @@ impl ConditionCheckInfo {
 
     pub(crate) fn dump_in_condition_check(
         self,
-        mut builder: condition_check::Builder,
-    ) -> condition_check::Builder {
+        mut builder: ConditionCheckBuilder,
+    ) -> ConditionCheckBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -74,7 +77,7 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_put(self, mut builder: put::Builder) -> put::Builder {
+    pub(crate) fn dump_in_put(self, mut builder: PutBuilder) -> PutBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -88,7 +91,10 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_put_item(self, mut builder: PutItem) -> PutItem {
+    pub(crate) fn dump_in_put_item(
+        self,
+        mut builder: PutItemFluentBuilder,
+    ) -> PutItemFluentBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -102,7 +108,7 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_update(self, mut builder: update::Builder) -> update::Builder {
+    pub(crate) fn dump_in_update(self, mut builder: UpdateBuilder) -> UpdateBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -116,7 +122,10 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_update_item(self, mut builder: UpdateItem) -> UpdateItem {
+    pub(crate) fn dump_in_update_item(
+        self,
+        mut builder: UpdateItemFluentBuilder,
+    ) -> UpdateItemFluentBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -130,7 +139,7 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_delete(self, mut builder: delete::Builder) -> delete::Builder {
+    pub(crate) fn dump_in_delete(self, mut builder: DeleteBuilder) -> DeleteBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -144,7 +153,10 @@ impl ConditionCheckInfo {
         builder
     }
 
-    pub(crate) fn dump_in_delete_item(self, mut builder: DeleteItem) -> DeleteItem {
+    pub(crate) fn dump_in_delete_item(
+        self,
+        mut builder: DeleteItemFluentBuilder,
+    ) -> DeleteItemFluentBuilder {
         if self.expression.is_empty() {
             return builder;
         }
@@ -249,12 +261,13 @@ pub fn transact_condition_check<T: Resource>(
     info: ConditionCheckInfo,
     transaction_context: &mut Vec<TransactWriteItem>,
 ) {
-    let builder = condition_check::Builder::default()
+    let builder = ConditionCheck::builder()
         .table_name(T::table())
         .key(PK, AttributeValue::S(pk))
         .key(SK, AttributeValue::S(sk));
 
-    let check = info.dump_in_condition_check(builder).build();
+    // TODO(meos): 에러 처리
+    let check = info.dump_in_condition_check(builder).build().unwrap();
 
     transaction_context.push(TransactWriteItem::builder().condition_check(check).build());
 }

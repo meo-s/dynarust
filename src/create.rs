@@ -1,4 +1,6 @@
-use aws_sdk_dynamodb::model::{put, AttributeValue, TransactWriteItem};
+use aws_sdk_dynamodb::operation::put_item::builders::PutItemInputBuilder;
+use aws_sdk_dynamodb::types::builders::PutBuilder;
+use aws_sdk_dynamodb::types::{AttributeValue, TransactWriteItem};
 use serde::Serialize;
 
 use crate::condition_check::{condition_check_not_exists, ConditionCheckInfo};
@@ -139,7 +141,7 @@ pub fn transact_create_with_checks<'a, T: Resource + Serialize>(
 ) -> Result<&'a T, DynarustError> {
     let object = Client::resource_as_object(resource)?;
 
-    let mut builder = put::Builder::default().table_name(T::table());
+    let mut builder = PutBuilder::default().table_name(T::table());
 
     for (k, v) in object {
         builder = builder.item(k, Client::value2attr(&v)?)
@@ -154,7 +156,12 @@ pub fn transact_create_with_checks<'a, T: Resource + Serialize>(
 
     put = condition_checks.dump_in_put(put);
 
-    transaction_context.push(TransactWriteItem::builder().put(put.build()).build());
+    // TODO(meos): put.build() 에러 처리
+    transaction_context.push(
+        TransactWriteItem::builder()
+            .put(put.build().unwrap())
+            .build(),
+    );
     Ok(resource)
 }
 

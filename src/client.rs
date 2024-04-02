@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::env;
 use std::fmt::{Display, Formatter};
 
-use aws_sdk_dynamodb::model::{AttributeValue, TransactWriteItem};
+use aws_config::BehaviorVersion;
+use aws_sdk_dynamodb::types::{AttributeValue, TransactWriteItem};
 use serde::Serialize;
 use serde_json::{Map, Value};
 
@@ -50,7 +51,7 @@ impl Client {
     /// AWS_SECRET_ACCESS_KEY
     /// AWS_REGION
     pub async fn aws() -> Self {
-        let cfg = aws_config::from_env().load().await;
+        let cfg = aws_config::defaults(BehaviorVersion::latest()).load().await;
         Client {
             client: aws_sdk_dynamodb::Client::new(&cfg),
         }
@@ -65,10 +66,11 @@ impl Client {
 
     /// Connect against a local version of DynamoDB running on the specified port.
     pub async fn local_on_port(port: u16) -> Self {
-        env::set_var("AWS_REGION", "us-east-1");
-        env::set_var("AWS_ACCESS_KEY_ID", ".");
-        env::set_var("AWS_SECRET_ACCESS_KEY", ".");
-        let cfg = aws_config::from_env().load().await;
+        env::set_var("AWS_REGION", "eu-west-1");
+        let cfg = aws_config::defaults(BehaviorVersion::latest())
+            .test_credentials()
+            .load()
+            .await;
         Client {
             client: aws_sdk_dynamodb::Client::from_conf(
                 aws_sdk_dynamodb::config::Builder::from(&cfg)

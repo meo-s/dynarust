@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use aws_sdk_dynamodb::model::{AttributeValue, KeysAndAttributes};
+use aws_sdk_dynamodb::types::{AttributeValue, KeysAndAttributes};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -55,10 +55,14 @@ impl Client {
             ]))
         }
 
+        //
         let result = self
             .client
             .batch_get_item()
-            .request_items(T::table(), builder.build())
+            .request_items(
+                T::table(),
+                /* TODO(meos): builder.build() 에러 처리 */ builder.build().unwrap(),
+            )
             .send()
             .await?;
 

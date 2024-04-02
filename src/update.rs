@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use aws_sdk_dynamodb::model::{update, AttributeValue, TransactWriteItem};
+use aws_sdk_dynamodb::operation::update_item;
+use aws_sdk_dynamodb::types::{builders::UpdateBuilder, AttributeValue, TransactWriteItem};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
@@ -206,7 +207,7 @@ pub fn transact_update_with_checks<T: Resource + Serialize + DeserializeOwned>(
     let condition_check = condition_check_exists().merge(condition_checks);
 
     let (pk, sk) = resource.pk_sk();
-    let mut builder = update::Builder::default()
+    let mut builder = UpdateBuilder::default()
         .table_name(T::table())
         .key(PK, AttributeValue::S(pk))
         .key(SK, AttributeValue::S(sk));
@@ -226,7 +227,11 @@ pub fn transact_update_with_checks<T: Resource + Serialize + DeserializeOwned>(
 
     builder = condition_check.dump_in_update(builder);
 
-    let update = builder.update_expression(update_expression).build();
+    // TODO: builder.update_expression().build() 에러 처리 하기
+    let update = builder
+        .update_expression(update_expression)
+        .build()
+        .unwrap();
     transaction_context.push(TransactWriteItem::builder().update(update).build());
 
     Ok(updated)

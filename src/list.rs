@@ -1,4 +1,4 @@
-use aws_sdk_dynamodb::model::AttributeValue;
+use aws_sdk_dynamodb::types::AttributeValue;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -78,15 +78,13 @@ impl Client {
 
         let mut results = vec![];
 
-        if let Some(items) = result.items() {
-            for item in items {
-                let mut object = Value::Object(serde_json::Map::new());
-                for (k, v) in item {
-                    object[k] = Self::attr2value(v)?
-                }
-                let t: T = serde_json::from_value(object)?;
-                results.push(t)
+        for item in result.items() {
+            let mut object = Value::Object(serde_json::Map::new());
+            for (k, v) in item {
+                object[k] = Self::attr2value(v)?
             }
+            let t: T = serde_json::from_value(object)?;
+            results.push(t)
         }
 
         Ok(results)
